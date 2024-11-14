@@ -186,6 +186,7 @@ let config = Config::new(String::from("test"), 42);
 use dataclass_macro::dataclass;
 use serde::{Serialize, Deserialize};
 
+#[derive(Serialize, Deserialize)]
 #[dataclass]
 struct User {
     #[serde(rename = "userName")]
