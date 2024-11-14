@@ -3,8 +3,9 @@ use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
-use syn::{parse_macro_input, Data, DeriveInput, Expr, Fields, Lit, Meta};
+use syn::{parse_macro_input, Attribute, Data, DeriveInput, Expr, Fields, Lit, Meta};
 
+// 定义配置选项结构体
 #[derive(Default)]
 struct DataclassOptions {
     init: bool,
@@ -22,7 +23,7 @@ struct DataclassOptions {
 impl DataclassOptions {
     fn from_meta_list(meta_list: Punctuated<Meta, Comma>) -> Self {
         let mut options = DataclassOptions {
-            init: true,
+            init: true, // 默认值
             repr: true,
             eq: true,
             order: false,
@@ -69,20 +70,42 @@ impl DataclassOptions {
     }
 }
 
+fn has_serde_attribute(attrs: &[Attribute]) -> bool {
+    attrs.iter().any(|attr| {
+        if let Ok(meta) = attr.parse_args::<Meta>() {
+            match meta {
+                Meta::Path(path) => path.is_ident("serde"),
+                _ => false,
+            }
+        } else {
+            false
+        }
+    })
+}
+
 #[proc_macro_attribute]
 pub fn dataclass(args: TokenStream, input: TokenStream) -> TokenStream {
     let args =
         parse_macro_input!(args with syn::punctuated::Punctuated::<Meta, Comma>::parse_terminated);
-    let input = parse_macro_input!(input as DeriveInput);
+    let mut input = parse_macro_input!(input as DeriveInput);
 
     let options = DataclassOptions::from_meta_list(args);
+
+    // check if serde attribute is already present
+    if !has_serde_attribute(&input.attrs) {
+        // add serde derive attribute
+        input.attrs.push(syn::parse_quote!(
+            #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
+        ));
+    }
+
     implement_dataclass(input, options)
 }
 
 fn implement_dataclass(input: DeriveInput, options: DataclassOptions) -> TokenStream {
     let struct_name = &input.ident;
+    let attrs = &input.attrs;
 
-    // get struct fields
     let fields = match &input.data {
         Data::Struct(data_struct) => match &data_struct.fields {
             Fields::Named(fields_named) => &fields_named.named,
@@ -164,16 +187,12 @@ fn implement_dataclass(input: DeriveInput, options: DataclassOptions) -> TokenSt
 
             impl Ord for #struct_name {
                 fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-                    // compare each field
                     #(
                         if let std::cmp::Ordering::Equal = self.#field_names.cmp(&other.#field_names) {
-                            // if equal, continue to the next field
                         } else {
-                            // if not equal, return the ordering
                             return self.#field_names.cmp(&other.#field_names);
                         }
                     )*
-                    // all fields are equal
                     std::cmp::Ordering::Equal
                 }
             }
@@ -204,10 +223,9 @@ fn implement_dataclass(input: DeriveInput, options: DataclassOptions) -> TokenSt
         }
     };
 
-    // generate the final struct definition and implementations
     let expanded = quote! {
         #[derive(Clone)]
-        #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+        #(#attrs)*
         pub struct #struct_name {
             #struct_fields
         }
