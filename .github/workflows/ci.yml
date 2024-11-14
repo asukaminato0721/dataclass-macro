@@ -83,7 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@1.60.0  # Adjust this to your MSRV
+      - uses: dtolnay/rust-toolchain@1.61.0  # Adjust this to your MSRV
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
       - name: Check
