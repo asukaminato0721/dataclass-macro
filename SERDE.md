@@ -16,7 +16,9 @@ serde_json = "1.0"  # for JSON serialization/deserialization
 ```rust
 use dataclass_macro::dataclass;
 use serde_json::json;
+use serde::{Serialize, Deserialize};
 
+#[derive(Serialize, Deserialize)]
 #[dataclass]
 struct User {
     name: String,
@@ -67,6 +69,7 @@ You can customize the serialization behavior using serde attributes:
 use dataclass_macro::dataclass;
 use serde::{Serialize, Deserialize};
 
+#[derive(Serialize, Deserialize)]
 #[dataclass]
 struct Configuration {
     #[serde(rename = "serverName")]
@@ -112,6 +115,7 @@ use chrono::{DateTime, Utc};
 use dataclass_macro::dataclass;
 use serde::{Serialize, Deserialize};
 
+#[derive(Serialize, Deserialize)]
 #[dataclass]
 struct AuditLog {
     #[serde(with = "chrono::serde::ts_seconds")]
@@ -151,6 +155,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 use dataclass_macro::dataclass;
 use serde::{Serialize, Deserialize};
 
+#[derive(Serialize, Deserialize)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 enum Status {
@@ -199,6 +204,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 use dataclass_macro::dataclass;
 use std::fs::File;
 
+#[derive(Serialize, Deserialize)]
 #[dataclass]
 struct Settings {
     app_name: String,
