@@ -1,9 +1,9 @@
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, DeriveInput, Data, Fields, Meta, Expr, Lit};
+use proc_macro2::TokenStream as TokenStream2;
+use quote::quote;
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
-use quote::quote;
-use proc_macro2::TokenStream as TokenStream2;
+use syn::{parse_macro_input, Data, DeriveInput, Expr, Fields, Lit, Meta};
 
 #[derive(Default)]
 struct DataclassOptions {
@@ -71,16 +71,17 @@ impl DataclassOptions {
 
 #[proc_macro_attribute]
 pub fn dataclass(args: TokenStream, input: TokenStream) -> TokenStream {
-    let args = parse_macro_input!(args with syn::punctuated::Punctuated::<Meta, Comma>::parse_terminated);
+    let args =
+        parse_macro_input!(args with syn::punctuated::Punctuated::<Meta, Comma>::parse_terminated);
     let input = parse_macro_input!(input as DeriveInput);
-    
+
     let options = DataclassOptions::from_meta_list(args);
     implement_dataclass(input, options)
 }
 
 fn implement_dataclass(input: DeriveInput, options: DataclassOptions) -> TokenStream {
     let struct_name = &input.ident;
-    
+
     // get struct fields
     let fields = match &input.data {
         Data::Struct(data_struct) => match &data_struct.fields {
@@ -89,16 +90,15 @@ fn implement_dataclass(input: DeriveInput, options: DataclassOptions) -> TokenSt
         },
         _ => panic!("Dataclass only works with structs"),
     };
-    
-    let field_names: Vec<_> = fields.iter()
+
+    let field_names: Vec<_> = fields
+        .iter()
         .map(|field| field.ident.as_ref().unwrap())
         .collect();
-    let field_types: Vec<_> = fields.iter()
-        .map(|field| &field.ty)
-        .collect();
-    
+    let field_types: Vec<_> = fields.iter().map(|field| &field.ty).collect();
+
     let mut implementations = TokenStream2::new();
-    
+
     // (init option)
     if options.init {
         let constructor = if options.kw_only {
@@ -124,7 +124,7 @@ fn implement_dataclass(input: DeriveInput, options: DataclassOptions) -> TokenSt
         };
         implementations.extend(constructor);
     }
-    
+
     // Debug (repr option)
     if options.repr {
         let debug_impl = quote! {
@@ -138,7 +138,7 @@ fn implement_dataclass(input: DeriveInput, options: DataclassOptions) -> TokenSt
         };
         implementations.extend(debug_impl);
     }
-    
+
     // (eq option)
     if options.eq {
         let eq_impl = quote! {
@@ -147,12 +147,12 @@ fn implement_dataclass(input: DeriveInput, options: DataclassOptions) -> TokenSt
                     #(self.#field_names == other.#field_names)&&*
                 }
             }
-            
+
             impl Eq for #struct_name {}
         };
         implementations.extend(eq_impl);
     }
-    
+
     // (order option)
     if options.order {
         let ord_impl = quote! {
@@ -161,7 +161,7 @@ fn implement_dataclass(input: DeriveInput, options: DataclassOptions) -> TokenSt
                     Some(self.cmp(other))
                 }
             }
-            
+
             impl Ord for #struct_name {
                 fn cmp(&self, other: &Self) -> std::cmp::Ordering {
                     // compare each field
@@ -180,7 +180,7 @@ fn implement_dataclass(input: DeriveInput, options: DataclassOptions) -> TokenSt
         };
         implementations.extend(ord_impl);
     }
-    
+
     // Hash (unsafe_hash option)
     if options.unsafe_hash {
         let hash_impl = quote! {
@@ -192,7 +192,7 @@ fn implement_dataclass(input: DeriveInput, options: DataclassOptions) -> TokenSt
         };
         implementations.extend(hash_impl);
     }
-    
+
     // (frozen option)
     let struct_fields = if options.frozen {
         quote! {
@@ -203,7 +203,7 @@ fn implement_dataclass(input: DeriveInput, options: DataclassOptions) -> TokenSt
             #(pub #field_names: #field_types,)*
         }
     };
-    
+
     // generate the final struct definition and implementations
     let expanded = quote! {
         #[derive(Clone)]
@@ -211,9 +211,9 @@ fn implement_dataclass(input: DeriveInput, options: DataclassOptions) -> TokenSt
         pub struct #struct_name {
             #struct_fields
         }
-        
+
         #implementations
     };
-    
+
     TokenStream::from(expanded)
 }

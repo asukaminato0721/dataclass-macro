@@ -23,29 +23,29 @@ fn test_basic_dataclass() {
     let person1 = Person::new(
         String::from("Alice"),
         30,
-        Some(String::from("alice@example.com"))
+        Some(String::from("alice@example.com")),
     );
-    
+
     let person2 = Person::new(
         String::from("Alice"),
         30,
-        Some(String::from("alice@example.com"))
+        Some(String::from("alice@example.com")),
     );
-    
+
     // Debug (repr)
     println!("{:?}", person1);
-    
+
     // (eq)
     assert_eq!(person1, person2);
-    
+
     // (order)
     let person3 = Person::new(
         String::from("Bob"),
         25,
-        Some(String::from("bob@example.com"))
+        Some(String::from("bob@example.com")),
     );
     assert!(person1 < person3);
-    
+
     // (unsafe_hash)
     use std::collections::HashSet;
     let mut set = HashSet::new();
@@ -76,9 +76,9 @@ fn test_no_order_dataclass() {
 
     let config1 = Config::new(String::from("test"), 42);
     let config2 = Config::new(String::from("test"), 42);
-    
+
     assert_eq!(config1, config2);
-    
+
     // not allowed to compare Config
     // assert!(config1 < config2);
 }
