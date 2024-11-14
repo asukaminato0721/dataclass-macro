@@ -72,11 +72,8 @@ impl DataclassOptions {
 
 fn has_serde_attribute(attrs: &[Attribute]) -> bool {
     attrs.iter().any(|attr| {
-        if let Ok(meta) = attr.parse_args::<Meta>() {
-            match meta {
-                Meta::Path(path) => path.is_ident("serde"),
-                _ => false,
-            }
+        if let Ok(Meta::Path(path)) = attr.parse_args::<Meta>() {
+            path.is_ident("serde")
         } else {
             false
         }
