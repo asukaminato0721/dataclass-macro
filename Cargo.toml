@@ -1,0 +1,18 @@
+[package]
+name = "dataclass-macro"
+version = "0.1.0"
+edition = "2021"
+description = "A procedural macro for generating dataclasses in Rust."
+license = "MIT"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "2.0", features = ["full", "extra-traits"] }
+quote = "1.0"
+proc-macro2 = "1.0"
+serde = { version = "1.0", features = ["derive"], optional = true }
+
+[features]
+serde = ["dep:serde"]
