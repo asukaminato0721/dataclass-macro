@@ -2,11 +2,14 @@ name: Rust CI
 
 on:
   push:
+    branches: [ '**' ]  # 匹配所有分支的推送
   pull_request:
-    branches: *
+    branches: [ '**' ]  # 匹配所有分支的 PR
+  workflow_dispatch:    # 允许手动触发
 
 env:
   CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-Dwarnings"  # 将警告视为错误
 
 jobs:
   check:
